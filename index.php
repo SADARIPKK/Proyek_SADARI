@@ -1,138 +1,95 @@
 <?php
-// ==========================
-// BASIC ENV DETECTION
-// ==========================
-$isLocal = in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1'], true);
-
-// ==========================
-// QUERY HANDLING (SAFE)
-// ==========================
-if (isset($_GET['q'])) {
-    $query = $_GET['q'];
-
-    // Allow-list approach
-    if ($query === 'info') {
-
-        // phpinfo allowed ONLY on localhost
-        if ($isLocal) {
-            phpinfo();
-            exit;
-        }
-
-        http_response_code(403);
-        exit('Forbidden! phpinfo allowed ONLY on localhost');
-    }
-
-    // Unknown query
-    http_response_code(404);
-    exit('Invalid query parameter.');
+session_start();
+if (!isset($_SESSION['admin'])) {
+    header("Location: ../login.php");
+    exit();
 }
-?>
+require_once '../../koneksi.php';
 
+$query = mysqli_query($conn, "SELECT * FROM artikel ORDER BY created_at DESC");
+?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laragon</title>
-
-    <link href="https://fonts.googleapis.com/css?family=Karla:400" rel="stylesheet">
-
+    <title>Kelola Artikel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            font-family: 'Karla', sans-serif;
-            background-color: #f9f9f9;
-            color: #333;
-        }
-
-        .container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            text-align: center;
-        }
-
-        .content {
-            max-width: 800px;
-            padding: 100px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .title {
-            font-size: 60px;
-            margin: 0;
-        }
-
-        .info {
-            margin-top: 20px;
-            font-size: 18px;
-            line-height: 1.6;
-        }
-
-        .info a {
-            color: #007bff;
-            text-decoration: none;
-        }
-
-        .info a:hover {
-            color: #0056b3;
-            text-decoration: underline;
-        }
-
-        .opt {
-            margin-top: 30px;
-        }
-
-        .opt a {
-            font-size: 18px;
-            color: #007bff;
-            text-decoration: none;
-        }
-
-        .opt a:hover {
-            color: #0056b3;
-            text-decoration: underline;
-        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; }
+        body { background:#f4f4f4; }
+        .navbar { background:#2e7d32; padding:15px 30px; display:flex; justify-content:space-between; align-items:center; }
+        .navbar span { color:white; font-weight:600; font-size:16px; }
+        .navbar a { color:white; text-decoration:none; background:#1b5e20; padding:6px 12px; border-radius:5px; margin-left:8px; font-size:13px; }
+        .navbar a:hover { background:#4caf50; }
+        .container { padding:30px; }
+        .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+        .top h5 { font-size:18px; color:#333; }
+        .btn-tambah { background:#2e7d32; color:white; padding:8px 16px; border-radius:8px; text-decoration:none; font-size:13px; }
+        table { width:100%; border-collapse:collapse; background:white; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+        th { background:#2e7d32; color:white; padding:12px 15px; font-size:13px; text-align:left; }
+        td { padding:12px 15px; font-size:13px; border-bottom:1px solid #f0f0f0; color:#444; }
+        tr:hover td { background:#f9f9f9; }
+        .badge { padding:4px 10px; border-radius:20px; font-size:11px; font-weight:500; }
+        .badge-hijau { background:#e8f5e9; color:#2e7d32; }
+        .badge-kuning { background:#fff8e1; color:#f9a825; }
+        .badge-abu { background:#f5f5f5; color:#888; }
+        .btn-edit { background:#f9a825; color:white; padding:5px 10px; border-radius:5px; text-decoration:none; font-size:12px; }
+        .btn-hapus { background:#e53935; color:white; padding:5px 10px; border-radius:5px; text-decoration:none; font-size:12px; }
+        .kosong { text-align:center; padding:40px; color:#aaa; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="content">
-        <h1 class="title">Laragon</h1>
-
-        <div class="info">
-            <?php if ($isLocal): ?>
-                <p><?= htmlspecialchars($_SERVER['SERVER_SOFTWARE'], ENT_QUOTES, 'UTF-8'); ?></p>
-                <p>
-                    PHP version: <?= htmlspecialchars(PHP_VERSION, ENT_QUOTES, 'UTF-8'); ?>
-                    <a title="phpinfo()" href="/?q=info">info</a>
-                </p>
-                <p>
-                    Document Root:
-                    <?= htmlspecialchars($_SERVER['DOCUMENT_ROOT'], ENT_QUOTES, 'UTF-8'); ?>
-                </p>
-            <?php else: ?>
-                <p>Server is running</p>
-                <p>PHP is enabled</p>
-            <?php endif; ?>
-        </div>
-
-        <div class="opt">
-            <p>
-                <a href="https://laragon.org/docs" target="_blank" rel="noopener">
-                    Getting Started
-                </a>
-            </p>
+    <div class="navbar">
+        <span> Admin PKK Desa</span>
+        <div>
+            <a href="../dashboard.php">Dashboard</a>
+            <a href="../logout.php">Logout</a>
         </div>
     </div>
-</div>
 
+    <div class="container">
+        <div class="top">
+            <h5>Kelola Artikel</h5>
+            <a href="tambah.php" class="btn-tambah">+ Tambah Artikel</a>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Judul</th>
+                    <th>Kategori</th>
+                    <th>Status</th>
+                    <th>Tanggal</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php if (mysqli_num_rows($query) == 0) { ?>
+                <tr><td colspan="6" class="kosong">Belum ada artikel</td></tr>
+            <?php } else { $no = 1; while ($data = mysqli_fetch_assoc($query)) { ?>
+                <tr>
+                    <td><?= $no++ ?></td>
+                    <td><?= $data['judul'] ?></td>
+                    <td><?= $data['kategori'] ?? '-' ?></td>
+                    <td>
+                        <?php if ($data['status'] == 'diterbitkan') { ?>
+                            <span class="badge badge-hijau">Diterbitkan</span>
+                        <?php } elseif ($data['status'] == 'draft') { ?>
+                            <span class="badge badge-kuning">Draft</span>
+                        <?php } else { ?>
+                            <span class="badge badge-abu">Diarsipkan</span>
+                        <?php } ?>
+                    </td>
+                    <td><?= date('d/m/Y', strtotime($data['created_at'])) ?></td>
+                    <td>
+                        <a href="edit.php?id=<?= $data['id_artikel'] ?>" class="btn-edit">Edit</a>
+                        <a href="hapus.php?id=<?= $data['id_artikel'] ?>" class="btn-hapus" onclick="return confirm('Yakin hapus artikel ini?')">Hapus</a>
+                    </td>
+                </tr>
+            <?php } } ?>
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>
